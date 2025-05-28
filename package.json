@@ -9,7 +9,7 @@
   ],
   "packageManager": "npm@10.9.2",
   "scripts": {
-    "start:dev": "skaffold run --cache-artifacts=false --status-check=false --tail=true"
+    "start:dev": "skaffold run --status-check=false --tail=true"
   },
   "devDependencies": {
   }

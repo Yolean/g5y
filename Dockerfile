@@ -19,3 +19,4 @@ FROM --platform=${TARGETPLATFORM:-linux/amd64} gcr.io/distroless/static-debian12
 COPY --from=0 /workspace/source/target/bin/sidecar /usr/local/bin/sidecar
 
 ENTRYPOINT ["/usr/local/bin/sidecar"]
+CMD ["--configPath","/tmp/nonexistent-to-get-default-config.yaml"]

@@ -17,6 +17,18 @@ static_resources:
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
           http_filters:
+          - name: envoy.filters.http.ext_proc
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_proc.v3.ExternalProcessor
+              allow_mode_override: true
+              processing_mode:
+                request_header_mode: "SEND"
+                request_body_mode: "NONE"
+                response_header_mode: "SEND"
+                response_body_mode: "NONE"
+              grpc_service:
+                envoy_grpc:
+                  cluster_name: extproc_cluster
           - name: envoy.filters.http.router
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
@@ -32,6 +44,27 @@ static_resources:
                   cluster: echo
 
   clusters:
+  - name: extproc_cluster
+    connect_timeout: 0.25s
+    type: STATIC
+    lb_policy: ROUND_ROBIN
+    typed_extension_protocol_options:
+      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+        explicit_http_config:
+          http2_protocol_options:
+            connection_keepalive:
+              interval: 30s
+              timeout: 5s
+    load_assignment:
+      cluster_name: extproc_cluster
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: 127.0.0.1
+                    port_value: 1063
   - name: echo
     type: LOGICAL_DNS
     dns_lookup_family: V4_ONLY
