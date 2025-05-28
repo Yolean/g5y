@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "name": "g5y-dev",
+  "workspaces": [
+    "examples/*"
+  ],
+  "packageManager": "npm@10.9.2",
+  "devDependencies": {
+  }
+}
