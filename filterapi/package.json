@@ -1,11 +1,10 @@
 {
-  "name": "g5y-examples-noauth",
+  "name": "g5y-filterapi",
   "version": "1.0.0",
   "license": "Apache-2.0",
   "devDependencies": {
-    "vitest": "3.1.4"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "go test ./..."
   }
 }
