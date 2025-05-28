@@ -397,6 +397,111 @@ func TestServer_ProcessorSelection(t *testing.T) {
 	})
 }
 
+func TestServer_ProcessorForPath(t *testing.T) {
+	tests := []struct {
+		name           string
+		setupServer    func(*Server)
+		requestPath    string
+		expectedResult string
+	}{
+		{
+			name: "exact match takes precedence over prefix",
+			setupServer: func(s *Server) {
+				s.RegisterPrefix("/api/", func(*processorConfig, map[string]string, *slog.Logger, bool) (Processor, error) {
+					return &mockProcessor{}, nil
+				})
+				s.Register("/api/exact", func(*processorConfig, map[string]string, *slog.Logger, bool) (Processor, error) {
+					return &mockProcessor{}, nil
+				})
+			},
+			requestPath:    "/api/exact",
+			expectedResult: "exact match",
+		},
+		{
+			name: "prefix match when no exact match",
+			setupServer: func(s *Server) {
+				s.RegisterPrefix("/api/", func(*processorConfig, map[string]string, *slog.Logger, bool) (Processor, error) {
+					return &mockProcessor{}, nil
+				})
+			},
+			requestPath:    "/api/v1/models",
+			expectedResult: "prefix match",
+		},
+		{
+			name: "first registered prefix wins",
+			setupServer: func(s *Server) {
+				s.RegisterPrefix("/api/", func(*processorConfig, map[string]string, *slog.Logger, bool) (Processor, error) {
+					return &mockProcessor{}, nil
+				})
+				s.RegisterPrefix("/api/v1/", func(*processorConfig, map[string]string, *slog.Logger, bool) (Processor, error) {
+					return nil, nil // Should not be selected
+				})
+			},
+			requestPath:    "/api/v1/models",
+			expectedResult: "first prefix match",
+		},
+		{
+			name: "no match found",
+			setupServer: func(s *Server) {
+				s.Register("/different", func(*processorConfig, map[string]string, *slog.Logger, bool) (Processor, error) {
+					return &mockProcessor{}, nil
+				})
+			},
+			requestPath:    "/api/v1/models",
+			expectedResult: "no match",
+		},
+		{
+			name: "registration order matters - exact then prefix",
+			setupServer: func(s *Server) {
+				s.Register("/api/exact", func(*processorConfig, map[string]string, *slog.Logger, bool) (Processor, error) {
+					return &mockProcessor{}, nil
+				})
+				s.RegisterPrefix("/api/", func(*processorConfig, map[string]string, *slog.Logger, bool) (Processor, error) {
+					return &mockProcessor{}, nil
+				})
+			},
+			requestPath:    "/api/exact",
+			expectedResult: "exact match",
+		},
+		{
+			name: "registration order matters - prefix then exact",
+			setupServer: func(s *Server) {
+				s.RegisterPrefix("/api/", func(*processorConfig, map[string]string, *slog.Logger, bool) (Processor, error) {
+					return &mockProcessor{}, nil
+				})
+				s.Register("/api/exact", func(*processorConfig, map[string]string, *slog.Logger, bool) (Processor, error) {
+					return &mockProcessor{}, nil
+				})
+			},
+			requestPath:    "/api/exact",
+			expectedResult: "exact match",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s, err := NewServer(slog.Default())
+			require.NoError(t, err)
+			s.config = &processorConfig{}
+
+			tt.setupServer(s)
+
+			headers := map[string]string{":path": tt.requestPath}
+			processor, err := s.processorForPath(headers, false)
+
+			switch tt.expectedResult {
+			case "no match":
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "no processor defined for path")
+				require.Nil(t, processor)
+			default:
+				require.NoError(t, err)
+				require.NotNil(t, processor)
+			}
+		})
+	}
+}
+
 func Test_filterSensitiveHeadersForLogging(t *testing.T) {
 	hm := &corev3.HeaderMap{
 		Headers: []*corev3.HeaderValue{

@@ -43,8 +43,15 @@ type Server struct {
 	logger                        *slog.Logger
 	config                        *processorConfig
 	processorFactories            map[string]ProcessorFactory
+	processorPrefixFactories      []prefixRegistration
 	routerProcessorsPerReqID      map[string]Processor
 	routerProcessorsPerReqIDMutex sync.RWMutex
+}
+
+// prefixRegistration holds a path prefix and its associated processor factory
+type prefixRegistration struct {
+	pathPrefix string
+	factory    ProcessorFactory
 }
 
 // NewServer creates a new external processor server.
@@ -131,19 +138,36 @@ func (s *Server) Register(path string, newProcessor ProcessorFactory) {
 	s.processorFactories[path] = newProcessor
 }
 
+// RegisterPrefix a new processor for the given path prefix.
+func (s *Server) RegisterPrefix(pathPrefix string, newProcessor ProcessorFactory) {
+	s.processorPrefixFactories = append(s.processorPrefixFactories, prefixRegistration{
+		pathPrefix: pathPrefix,
+		factory:    newProcessor,
+	})
+}
+
 // processorForPath returns the processor for the given path.
-// Only exact path matching is supported currently
+// Exact path matching takes precedence over prefix matching.
 func (s *Server) processorForPath(requestHeaders map[string]string, isUpstreamFilter bool) (Processor, error) {
 	pathHeader := ":path"
 	if isUpstreamFilter {
 		pathHeader = originalPathHeader
 	}
 	path := requestHeaders[pathHeader]
-	newProcessor, ok := s.processorFactories[path]
-	if !ok {
-		return nil, fmt.Errorf("no processor defined for path: %v", path)
+	
+	// First, try exact path matching
+	if newProcessor, ok := s.processorFactories[path]; ok {
+		return newProcessor(s.config, requestHeaders, s.logger, isUpstreamFilter)
 	}
-	return newProcessor(s.config, requestHeaders, s.logger, isUpstreamFilter)
+	
+	// Then, try prefix matching in registration order
+	for _, prefixReg := range s.processorPrefixFactories {
+		if strings.HasPrefix(path, prefixReg.pathPrefix) {
+			return prefixReg.factory(s.config, requestHeaders, s.logger, isUpstreamFilter)
+		}
+	}
+	
+	return nil, fmt.Errorf("no processor defined for path: %v", path)
 }
 
 // originalPathHeader is the header used to pass the original path to the processor.
