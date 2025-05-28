@@ -75,7 +75,6 @@ jobs:
             deps
             e2e
             extproc
-            controller
             translator
             examples
             blog

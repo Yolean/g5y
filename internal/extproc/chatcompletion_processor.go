@@ -142,10 +142,31 @@ type chatCompletionProcessorUpstreamFilter struct {
 	stream bool
 }
 
-// selectTranslator selects the translator based on the output schema.
-func (c *chatCompletionProcessorUpstreamFilter) selectTranslator(out filterapi.VersionedAPISchema) error {
+// initialize sets up the upstream filter with data from the router filter and the selected backend.
+// This replaces the previous SetBackend method.
+func (c *chatCompletionProcessorUpstreamFilter) initialize(
+	originalRequestBody *openai.ChatCompletionRequest,
+	originalRequestBodyRaw []byte,
+	onRetry bool,
+	outputSchema filterapi.VersionedAPISchema,
+	authHandler backendauth.Handler,
+	backendConfig *filterapi.Backend, // Used for metrics
+	metrics x.ChatCompletionMetrics, // Passed in since it's from factory
+) error {
+	c.originalRequestBody = originalRequestBody
+	c.originalRequestBodyRaw = originalRequestBodyRaw
+	c.onRetry = onRetry
+	c.stream = originalRequestBody.Stream // Assuming originalRequestBody is not nil
+	c.handler = authHandler
+	c.metrics = metrics // Ensure metrics are set
+
+	if backendConfig != nil {
+		c.metrics.SetBackend(backendConfig)
+	}
+
+	// Select translator based on the output schema of the chosen backend
 	// TODO: currently, we ignore the LLMAPISchema."Version" field.
-	switch out.Name {
+	switch outputSchema.Name {
 	case filterapi.APISchemaOpenAI:
 		c.translator = translator.NewChatCompletionOpenAIToOpenAITranslator()
 	case filterapi.APISchemaAWSBedrock:
@@ -292,26 +313,7 @@ func (c *chatCompletionProcessorUpstreamFilter) ProcessResponseBody(ctx context.
 	return resp, nil
 }
 
-// SetBackend implements [Processor.SetBackend].
-func (c *chatCompletionProcessorUpstreamFilter) SetBackend(ctx context.Context, b *filterapi.Backend, backendHandler backendauth.Handler, routeProcessor Processor) (err error) {
-	defer func() {
-		c.metrics.RecordRequestCompletion(ctx, err == nil)
-	}()
-	rp, ok := routeProcessor.(*chatCompletionProcessorRouterFilter)
-	if !ok {
-		panic("BUG: expected routeProcessor to be of type *chatCompletionProcessorRouterFilter")
-	}
-	rp.upstreamFilterCount++
-	c.metrics.SetBackend(b)
-	if err = c.selectTranslator(b.Schema); err != nil {
-		return fmt.Errorf("failed to select translator: %w", err)
-	}
-	c.handler = backendHandler
-	c.originalRequestBody = rp.originalRequestBody
-	c.originalRequestBodyRaw = rp.originalRequestBodyRaw
-	c.onRetry = rp.upstreamFilterCount > 1
-	c.stream = c.originalRequestBody.Stream
-	return
+	return nil
 }
 
 func parseOpenAIChatCompletionBody(body *extprocv3.HttpBody) (modelName string, rb *openai.ChatCompletionRequest, err error) {

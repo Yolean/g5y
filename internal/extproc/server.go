@@ -139,11 +139,77 @@ func (s *Server) processorForPath(requestHeaders map[string]string, isUpstreamFi
 		pathHeader = originalPathHeader
 	}
 	path := requestHeaders[pathHeader]
-	newProcessor, ok := s.processorFactories[path]
+	processorFactory, ok := s.processorFactories[path]
 	if !ok {
 		return nil, fmt.Errorf("no processor defined for path: %v", path)
 	}
-	return newProcessor(s.config, requestHeaders, s.logger, isUpstreamFilter)
+
+	p, err := processorFactory(s.config, requestHeaders, s.logger, isUpstreamFilter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create processor for path %s: %w", path, err)
+	}
+
+	// If it's an upstream filter for chat completions, we need to initialize it
+	// with data from the corresponding router-level filter.
+	// TODO(Inject backend info based on router decision): This is a simplified check.
+	// Ideally, this should be more robust, perhaps based on the type of processor returned by the factory
+	// or specific registration for processors that need this kind of initialization.
+	if isUpstreamFilter && path == "/v1/chat/completions" { // Assuming this is the chat completion path
+		reqID, ok := requestHeaders["x-request-id"]
+		if !ok {
+			return nil, errors.New("x-request-id header missing for upstream filter initialization")
+		}
+
+		s.routerProcessorsPerReqIDMutex.RLock()
+		routerProcessorRaw, exists := s.routerProcessorsPerReqID[reqID]
+		s.routerProcessorsPerReqIDMutex.RUnlock()
+		if !exists {
+			return nil, fmt.Errorf("router processor not found for request ID %s during upstream initialization", reqID)
+		}
+
+		rp, ok := routerProcessorRaw.(*chatCompletionProcessorRouterFilter)
+		if !ok {
+			return nil, fmt.Errorf("router processor for request ID %s is not of expected type *chatCompletionProcessorRouterFilter", reqID)
+		}
+
+		// Determine the selected backend using the router
+		// Note: requestHeaders for router might need to be the original ones, ensure they are correctly passed.
+		// For upstream, requestHeaders contains originalPathHeader, which router might not expect for initial routing.
+		// However, the modelNameHeaderKey should have been set by the router filter.
+		routeName, err := s.config.router.Calculate(requestHeaders)
+		if err != nil {
+			return nil, fmt.Errorf("failed to calculate route for upstream filter initialization (reqID: %s): %w", reqID, err)
+		}
+
+		procCfgBackend, backendExists := s.config.backends[routeName]
+		if !backendExists {
+			return nil, fmt.Errorf("selected backend '%s' not found in config for upstream filter (reqID: %s)", routeName, reqID)
+		}
+
+		upstreamP, ok := p.(*chatCompletionProcessorUpstreamFilter)
+		if !ok {
+			return nil, fmt.Errorf("processor for path %s and reqID %s is not of expected type *chatCompletionProcessorUpstreamFilter for upstream initialization", path, reqID)
+		}
+
+		rp.upstreamFilterCount++ // This should be managed carefully, perhaps inside initialize if it affects onRetry logic there.
+
+		// The metrics for upstreamP are already initialized by its factory.
+		// We pass procCfgBackend.b for metrics SetBackend and procCfgBackend.handler for auth.
+		err = upstreamP.initialize(
+			rp.originalRequestBody,
+			rp.originalRequestBodyRaw,
+			rp.upstreamFilterCount > 1, // onRetry logic
+			procCfgBackend.b.Schema,
+			procCfgBackend.handler,
+			procCfgBackend.b,       // backendConfig for metrics
+			upstreamP.metrics,      // Pass existing metrics
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize upstream chat completion processor for reqID %s: %w", reqID, err)
+		}
+	}
+
+	return p, nil
 }
 
 // originalPathHeader is the header used to pass the original path to the processor.
@@ -204,23 +270,9 @@ func (s *Server) Process(stream extprocv3.ExternalProcessor_ProcessServer) error
 				s.logger.Error("cannot get processor", slog.String("error", err.Error()))
 				return status.Error(codes.NotFound, err.Error())
 			}
-			if isUpstreamFilter {
-				var resp *extprocv3.ProcessingResponse
-				resp, err = s.setBackend(ctx, p, reqID, req)
-				if err != nil {
-					s.logger.Error("error processing request message", slog.String("error", err.Error()))
-					return status.Errorf(codes.Unknown, "error processing request message: %v", err)
-				}
-				if resp != nil { // coverage-ignore
-					// This only happens runtime.GOOS == "darwin" when the attributes are not set.
-					if err = stream.Send(resp); err != nil {
-						s.logger.Error("cannot send response", slog.String("error", err.Error()))
-						return status.Errorf(codes.Unknown, "cannot send response: %v", err)
-					}
-					p = passThroughProcessor{}
-					continue
-				}
-			} else {
+			// Store the processor for the downstream filter if this is the first time we see this request ID.
+			// The upstream filter will use this processor to access the originally chosen backend.
+			if !isUpstreamFilter {
 				s.routerProcessorsPerReqIDMutex.Lock()
 				s.routerProcessorsPerReqID[reqID] = p
 				s.routerProcessorsPerReqIDMutex.Unlock()
@@ -295,67 +347,6 @@ func (s *Server) processMsg(ctx context.Context, l *slog.Logger, p Processor, re
 
 // setBackend retrieves the backend from the request attributes and sets it in the processor. This is only called
 // if the processor is an upstream filter.
-func (s *Server) setBackend(ctx context.Context, p Processor, reqID string, req *extprocv3.ProcessingRequest) (*extprocv3.ProcessingResponse, error) {
-	attributes := req.GetAttributes()["envoy.filters.http.ext_proc"]
-	if attributes == nil || len(attributes.Fields) == 0 { // coverage-ignore
-		if runtime.GOOS == "darwin" {
-			// TODO: this feels like a bug of Envoy v1.33 or earlier, not the darwin specific code.
-			//
-			// For some reason that I _suspect_ stems from macOS specific event loop peculiarities,
-			// the first request to a specific endpoint may not have the attributes set. Assuming
-			// the retry is configured, we simply do nothing and let the retry happen.
-			return &extprocv3.ProcessingResponse{
-				Response: &extprocv3.ProcessingResponse_RequestHeaders{
-					RequestHeaders: &extprocv3.HeadersResponse{
-						Response: &extprocv3.CommonResponse{},
-					},
-				},
-			}, nil
-		}
-		// Otherwise, this is a bug of either Envoy or control plane.
-		return nil, status.Error(codes.Internal, "missing attributes in request")
-	}
-
-	// This should contain the endpoint metadata.
-	hostMetadata, ok := attributes.Fields["xds.upstream_host_metadata"]
-	if !ok {
-		return nil, status.Error(codes.Internal, "missing xds.upstream_host_metadata in request")
-	}
-
-	// Unmarshal the text into the struct since the metadata is encoded as a proto string.
-	var metadata corev3.Metadata
-	err := prototext.Unmarshal([]byte(hostMetadata.GetStringValue()), &metadata)
-	if err != nil {
-		panic(err)
-	}
-
-	aiGatewayEndpointMetadata, ok := metadata.FilterMetadata["aigateway.envoy.io"]
-	if !ok {
-		return nil, status.Error(codes.Internal, "missing aigateway.envoy.io metadata")
-	}
-	backendName, ok := aiGatewayEndpointMetadata.Fields["backend_name"]
-	if !ok {
-		return nil, status.Error(codes.Internal, "missing backend_name in endpoint metadata")
-	}
-	backend, ok := s.config.backends[backendName.GetStringValue()]
-	if !ok {
-		return nil, status.Errorf(codes.Internal, "unknown backend: %s", backendName.GetStringValue())
-	}
-
-	s.routerProcessorsPerReqIDMutex.RLock()
-	defer s.routerProcessorsPerReqIDMutex.RUnlock()
-	routerProcessor, ok := s.routerProcessorsPerReqID[reqID]
-	if !ok {
-		return nil, status.Errorf(codes.Internal, "no router processor found, request_id=%s, backend=%s",
-			reqID, backendName.GetStringValue())
-	}
-
-	if err := p.SetBackend(ctx, backend.b, backend.handler, routerProcessor); err != nil {
-		return nil, status.Errorf(codes.Internal, "cannot set backend: %v", err)
-	}
-	return nil, nil
-}
-
 // Check implements [grpc_health_v1.HealthServer].
 func (s *Server) Check(context.Context, *grpc_health_v1.HealthCheckRequest) (*grpc_health_v1.HealthCheckResponse, error) {
 	return &grpc_health_v1.HealthCheckResponse{Status: grpc_health_v1.HealthCheckResponse_SERVING}, nil

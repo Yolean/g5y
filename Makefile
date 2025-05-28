@@ -12,7 +12,7 @@
 include Makefile.tools.mk
 
 # The list of commands that can be built.
-COMMANDS := controller extproc
+COMMANDS := extproc
 
 # This is the package that contains the version information for the build.
 GIT_COMMIT:=$(shell git rev-parse HEAD)
@@ -45,13 +45,10 @@ help:
 	@echo "  clean           	 Clears all built artifacts and installed binaries. Whenever you run into issues with the target like 'precommit' or 'test', try running this target."
 	@echo "  test            	 Run the unit tests for the codebase."
 	@echo "  test-coverage		 Run the unit tests for the codebase with coverage check."
-	@echo "  test-crdcel      	 Run the integration tests of CEL validation in CRD definitions with envtest."
-	@echo "                  	 This will be needed when changing API definitions."
 	@echo "  test-extproc    	 Run the integration tests for extproc without controller or k8s at all."
-	@echo "  test-controller	 Run the integration tests for the controller with envtest."
 	@echo "  test-e2e       	 Run the end-to-end tests with a local kind cluster."
 	@echo ""
-	@echo "For example, 'make precommit test' should be enough for initial iterations, and later 'make test-crdcel' etc. for the normal development cycle."
+	@echo "For example, 'make precommit test' should be enough for initial iterations, and later 'make test-e2e' etc. for the normal development cycle."
 	@echo "Note that some cases run by test-e2e or test-extproc use credentials and these will be skipped when not available."
 	@echo ""
 	@echo ""
@@ -93,26 +90,9 @@ tidy:
 	| xargs -I {} bash -c 'dirname {}' \
 	| xargs -I {} bash -c 'echo "tidy => {}"; cd {}; go mod tidy -v; '
 
-# This re-generates the CRDs for the API defined in the api/v1alpha1 directory.
-.PHONY: apigen
-apigen:
-	@echo "apigen => ./api/v1alpha1/..."
-	@go tool controller-gen object crd paths="./api/v1alpha1/..." output:dir=./api/v1alpha1 output:crd:dir=./manifests/charts/ai-gateway-crds-helm/templates
-
-# This generates the API documentation for the API defined in the api/v1alpha1 directory.
-.PHONY: apidoc
-apidoc:
-	@go tool crd-ref-docs \
-		--source-path=api/v1alpha1 \
-		--config=site/crd-ref-docs/config-core.yaml \
-		--templates-dir=site/crd-ref-docs/templates \
-		--max-depth 20 \
-		--output-path site/docs/api/api.mdx \
-		--renderer=markdown
-
 # This runs all necessary steps to prepare for a commit.
 .PHONY: precommit
-precommit: tidy codespell apigen apidoc format lint editorconfig yamllint helm-test
+precommit: tidy codespell format lint editorconfig yamllint helm-test
 
 # This runs precommit and checks for any differences in the codebase, failing if there are any.
 .PHONY: check
@@ -135,18 +115,6 @@ test:
 	@echo "test => ./..."
 	@go test $(GO_TEST_ARGS) ./...
 
-ENVTEST_K8S_VERSIONS ?= 1.29.0 1.30.0 1.31.0
-
-# This runs the integration tests of CEL validation rules in CRD definitions.
-#
-# This requires the EnvTest binary to be built.
-.PHONY: test-crdcel
-test-crdcel: apigen
-	@for k8sVersion in $(ENVTEST_K8S_VERSIONS); do \
-  		echo "Run CEL Validation on k8s $$k8sVersion"; \
-        ENVTEST_K8S_VERSION=$$k8sVersion go test ./tests/crdcel $(GO_TEST_ARGS) $(GO_TEST_E2E_ARGS) --tags test_crdcel; \
-    done
-
 # This runs the end-to-end tests for extproc without controller or k8s at all.
 # It is useful for the fast iteration of the extproc code.
 #
@@ -158,14 +126,6 @@ test-extproc: build.extproc
 	@$(MAKE) build.testupstream CMD_PATH_PREFIX=tests/internal/testupstreamlib
 	@echo "Run ExtProc test"
 	@go test ./tests/extproc/... $(GO_TEST_ARGS) $(GO_TEST_E2E_ARGS) -tags test_extproc
-
-# This runs the end-to-end tests for the controller with EnvTest.
-.PHONY: test-controller
-test-controller: apigen
-	@for k8sVersion in $(ENVTEST_K8S_VERSIONS); do \
-  		echo "Run Controller tests on k8s $$k8sVersion"; \
-        ENVTEST_K8S_VERSION=$$k8sVersion go test ./tests/controller $(GO_TEST_ARGS) $(GO_TEST_E2E_ARGS) -tags test_controller; \
-    done
 
 # This runs the end-to-end tests for the controller and extproc with a local kind cluster.
 #
@@ -268,12 +228,12 @@ docker-build.%:
 docker-build:
 	@$(foreach COMMAND_NAME,$(COMMANDS),$(MAKE) docker-build.$(COMMAND_NAME);)
 
-HELM_DIR := ./manifests/charts/ai-gateway-helm ./manifests/charts/ai-gateway-crds-helm
+HELM_DIR := ./manifests/charts/ai-gateway-helm
 
 # This lints the helm chart, ensuring that it is for packaging.
 .PHONY: helm-lint
 helm-lint:
-	@echo "helm-lint => .${HELM_DIR}"
+	@echo "helm-lint => ${HELM_DIR}"
 	@go tool helm lint ${HELM_DIR}
 
 # This packages the helm chart into a tgz file, ready for deployment as well as for pushing to the OCI registry.
@@ -295,11 +255,9 @@ helm-test: helm-package
 	@go tool helm show chart ${HELM_CHART_PATH} | grep -q "version: ${HELM_CHART_VERSION}"
 	@go tool helm show chart ${HELM_CHART_PATH} | grep -q "appVersion: ${TAG}"
 	@go tool helm template ${HELM_CHART_PATH} | grep -q "docker.io/envoyproxy/ai-gateway-extproc:${TAG}"
-	@go tool helm template ${HELM_CHART_PATH} | grep -q "docker.io/envoyproxy/ai-gateway-controller:${TAG}"
 
 # This pushes the helm chart to the OCI registry, requiring the access to the registry endpoint.
 .PHONY: helm-push
 helm-push: helm-package
-	@echo "helm-push => .${HELM_DIR}"
-	@go tool helm push ${OUTPUT_DIR}/ai-gateway-crds-helm-${HELM_CHART_VERSION}.tgz oci://${OCI_REGISTRY}
+	@echo "helm-push => ${HELM_DIR}"
 	@go tool helm push ${OUTPUT_DIR}/ai-gateway-helm-${HELM_CHART_VERSION}.tgz oci://${OCI_REGISTRY}

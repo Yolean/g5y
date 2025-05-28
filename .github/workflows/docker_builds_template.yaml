@@ -10,8 +10,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - command_name: "controller"
-            cmd_path_prefix: cmd
           - command_name: "extproc"
             cmd_path_prefix: cmd
           - command_name: "testupstream"

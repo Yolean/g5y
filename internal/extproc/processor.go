@@ -58,12 +58,6 @@ type Processor interface {
 	ProcessResponseHeaders(context.Context, *corev3.HeaderMap) (*extprocv3.ProcessingResponse, error)
 	// ProcessResponseBody processes the response body message.
 	ProcessResponseBody(context.Context, *extprocv3.HttpBody) (*extprocv3.ProcessingResponse, error)
-	// SetBackend instructs the processor to set the backend to use for the request. This is only called
-	// when the processor is used in the upstream filter.
-	//
-	// routerProcessor is the processor that is the "parent" which was used to determine the route at the
-	// router level. It holds the additional state that can be used to determine the backend to use.
-	SetBackend(ctx context.Context, backend *filterapi.Backend, handler backendauth.Handler, routerProcessor Processor) error
 }
 
 // passThroughProcessor implements the Processor interface.
@@ -89,7 +83,3 @@ func (p passThroughProcessor) ProcessResponseBody(context.Context, *extprocv3.Ht
 	return &extprocv3.ProcessingResponse{Response: &extprocv3.ProcessingResponse_ResponseBody{}}, nil
 }
 
-// SetBackend implements [Processor.SetBackend].
-func (p passThroughProcessor) SetBackend(context.Context, *filterapi.Backend, backendauth.Handler, Processor) error {
-	return nil
-}

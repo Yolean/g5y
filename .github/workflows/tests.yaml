@@ -55,42 +55,6 @@ jobs:
           TEST_OPENAI_API_KEY: ${{ secrets.ENVOY_AI_GATEWAY_OPENAI_API_KEY }}
         run: make test-coverage
 
-  test_crdcel:
-    name: CRD CEL Validation Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          cache: false
-          go-version-file: go.mod
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/go/bin
-          key: celvalidation-test-${{ hashFiles('**/go.mod', '**/go.sum', '**/Makefile') }}
-      - run: make test-crdcel
-
-  test_controller:
-    name: Controller Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          cache: false
-          go-version-file: go.mod
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/go/bin
-          key: controller-test-${{ hashFiles('**/go.mod', '**/go.sum', '**/Makefile') }}
-      - run: make test-controller
-
   test_extproc:
     name: External Processor Test (Envoy ${{ matrix.name }})
     strategy:
@@ -178,7 +142,7 @@ jobs:
     # Docker builds are verified in test_e2e job, so we only need to push the images when the event is a push event.
     if: github.event_name == 'push'
     name: Push Docker Images
-    needs: [unittest, test_crdcel, test_controller, test_extproc, test_e2e]
+    needs: [unittest, test_extproc, test_e2e]
     uses: ./.github/workflows/docker_builds_template.yaml
     secrets: inherit
 
