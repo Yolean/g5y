@@ -8,6 +8,9 @@
     "examples/*"
   ],
   "packageManager": "npm@10.9.2",
+  "scripts": {
+    "start:dev": "skaffold run --cache-artifacts=false --status-check=false --tail=true"
+  },
   "devDependencies": {
   }
 }

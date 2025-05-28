@@ -5,13 +5,12 @@ metadata:
 build:
   local:
     push: false
+    useDockerCLI: true
+    useBuildkit: true
   artifacts:
   - image: example.net/yolean/g5y
-    ko:
-      fromImage: gcr.io/distroless/static-debian12:nonroot
-      main: ./cmd/extproc
-
+    docker: {}
 manifests:
   kustomize:
     paths:
-      - examples/noauth
+    - examples/noauth
