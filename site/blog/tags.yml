@@ -1,0 +1,12 @@
+news:
+  label: News
+  permalink: /news
+  description: Project News
+presentations:
+  label: Presentations
+  permalink: /presentations
+  description: Project Presentations
+releases:
+  label: Releases
+  permalink: /releases
+  description: Project Releases
