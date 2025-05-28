@@ -1,0 +1,17 @@
+apiVersion: skaffold/v4beta13
+kind: Config
+metadata:
+  name: g5y
+build:
+  local:
+    push: false
+  artifacts:
+  - image: example.net/yolean/g5y
+    ko:
+      fromImage: gcr.io/distroless/static-debian12:nonroot
+      main: ./cmd/extproc
+
+manifests:
+  kustomize:
+    paths:
+      - examples/noauth

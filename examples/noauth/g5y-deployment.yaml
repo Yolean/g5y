@@ -25,6 +25,8 @@ spec:
         - name: gatewayparams
           mountPath: /etc/g5y/params
           subPath: params
+      - name: g5y
+        image: example.net/yolean/g5y
       volumes:
       - name: gatewayconfig
         secret:
