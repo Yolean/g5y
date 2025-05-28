@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: g5y
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: g5y
+  template:
+    metadata:
+      labels:
+        app: g5y
+    spec:
+      containers:
+      - name: envoy
+        image: ghcr.io/yolean/envoy-distroless@sha256:a3ad09fdbbc09a20c217a1b415f7549a94c75fc0ef4124128170f5c7a5bcb85e
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: gatewayconfig
+          # todo with the config init feature this path should be used for the result file
+          mountPath: /etc/envoy/envoy.yaml
+          subPath: envoy.yaml.template
+        - name: gatewayparams
+          mountPath: /etc/g5y/params
+          subPath: params
+      volumes:
+      - name: gatewayconfig
+        secret:
+          secretName: gatewayconfig
+      - name: gatewayparams
+        secret:
+          secretName: gatewayparams
