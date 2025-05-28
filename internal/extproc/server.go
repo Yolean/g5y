@@ -64,6 +64,13 @@ func NewServer(logger *slog.Logger) (*Server, error) {
 	return srv, nil
 }
 
+// RegisterFallbackProcessor registers a fallback processor for prefix "/" that logs headers.
+func (s *Server) RegisterFallbackProcessor() {
+	s.RegisterPrefix("/", func(_ *processorConfig, _ map[string]string, logger *slog.Logger, _ bool) (Processor, error) {
+		return &fallbackProcessor{logger: logger}, nil
+	})
+}
+
 // LoadConfig updates the configuration of the external processor.
 func (s *Server) LoadConfig(ctx context.Context, config *filterapi.Config) error {
 	rt, err := router.New(config, x.NewCustomRouter)

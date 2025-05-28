@@ -66,6 +66,12 @@ func (s *syncBuffer) String() string {
 	return s.b.String()
 }
 
+func (s *syncBuffer) Reset() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.b.Reset()
+}
+
 // newTestLoggerWithBuffer creates a new logger with a buffer for testing and asserting the output.
 func newTestLoggerWithBuffer() (*slog.Logger, *syncBuffer) {
 	buf := &syncBuffer{b: &bytes.Buffer{}}
