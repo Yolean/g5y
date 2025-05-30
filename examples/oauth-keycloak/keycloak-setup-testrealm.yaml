@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kc
+spec:
+  template:
+    spec:
+      containers:
+      - name: setup
+        image: ghcr.io/yolean/curl-yq:a76be2270142af1946579dc5ebcffaffde8c6953
+        workingDir: /setup
+        command:
+        - /bin/sh
+        - -ex
+        - /setup/keycloak-init.sh
+        env:
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: keycloak
+              key: adminpassword
+        - name: ON_END_SLEEP
+          value: infinity
+        volumeMounts:
+        - name: setup
+          mountPath: /setup
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+      volumes:
+      - name: setup
+        secret:
+          secretName: keycloak-testrealm

@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://github.com/GoogleContainerTools/skaffold/raw/refs/tags/v2.16.0/docs-v2/content/en/schemas/v4beta13.json
 apiVersion: skaffold/v4beta13
 kind: Config
 metadata:
@@ -18,7 +19,8 @@ manifests:
     paths:
     - examples/noauth
 profiles:
-- name: test-oauth-keycloak
+- name: example-noauth
+- name: example-oauth-keycloak
   manifests:
     kustomize:
       paths:

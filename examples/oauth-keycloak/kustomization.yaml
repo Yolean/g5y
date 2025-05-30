@@ -13,6 +13,7 @@ resources:
 
 patches:
 - path: mariadb-setup-keycloak.yaml
+- path: keycloak-setup-testrealm.yaml
 
 configMapGenerator:
 - name: keycloak-config
@@ -27,3 +28,11 @@ secretGenerator:
 - name: keycloak
   literals:
   - sqlpassword=devdevdevdev
+  - adminpassword=testadmin
+- name: keycloak-testrealm
+  files:
+  - testrealm/keycloak-init.sh
+  - testrealm/testrealm.json
+  - testrealm/20-oauth2.json
+  options:
+    disableNameSuffixHash: true

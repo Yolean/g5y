@@ -17,3 +17,5 @@ spec:
               key: sqlpassword
         - name: MYSQL_DATABASE
           value: keycloak
+        readinessProbe:
+          initialDelaySeconds: 5
