@@ -122,8 +122,8 @@ func Main(ctx context.Context, args []string, stderr io.Writer) (err error) {
 	}
 	// server.Register("/v1/chat/completions", extproc.ChatCompletionProcessorFactory(chatCompletionMetrics))
 	// server.Register("/v1/models", extproc.NewModelsProcessor)
-	
-	// Register fallback processor for all paths that logs headers
+
+	// All requests need a processor
 	server.RegisterFallbackProcessor()
 
 	if err := extproc.StartConfigWatcher(ctx, flags.configPath, server, l, time.Second*5); err != nil {
