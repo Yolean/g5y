@@ -1,0 +1,32 @@
+{
+  "clients": [
+    {
+      "clientId": "testrealm-openid",
+      "rootUrl": "https://g5y-test.example.net/",
+      "adminUrl": "https://g5y-test.example.net/",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "redirectUris": [
+        "https://g5y-test.example.net/callback"
+      ],
+      "webOrigins": [
+        "https://g5y-test.example.net"
+      ],
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "oidc.ciba.grant.enabled": "false",
+        "backchannel.logout.session.required": "false",
+        "display.on.consent.screen": "false",
+        "oauth2.device.authorization.grant.enabled": "false"
+      }
+    }
+  ]
+}

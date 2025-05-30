@@ -1,0 +1,14 @@
+{
+  "realm": "testrealm",
+  "enabled": true,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "registrationEmailAsUsername": true,
+  "ssoSessionIdleTimeoutRememberMe": 691200,
+  "ssoSessionMaxLifespanRememberMe": 691200,
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "en"
+  ],
+  "defaultLocale": "en"
+}
