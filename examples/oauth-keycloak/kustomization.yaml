@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: test-g5y
+
+resources:
+- ../noauth
+- github.com/Yolean/kubernetes-mysql-cluster/variants/scale-1?ref=e89ea21a5ea4cf57ab17855ce72f62850f65df5f
+- kc-deployment.yaml
+- keycloak-proxied-service.yaml
+- keycloak-proxied-cluster-service.yaml
+
+patches:
+- path: mariadb-setup-keycloak.yaml
+
+configMapGenerator:
+- name: keycloak-config
+  files:
+  - keycloak.conf
+- name: conf-d
+  behavior: merge
+  files:
+  - utf8.cnf
+
+secretGenerator:
+- name: keycloak
+  literals:
+  - sqlpassword=devdevdevdev

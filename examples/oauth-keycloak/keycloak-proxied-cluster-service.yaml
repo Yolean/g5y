@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak-proxied-cluster
+spec:
+  clusterIP: None
+  selector:
+    app: keycloak
+  ports:
+  - protocol: TCP
+    port: 8080

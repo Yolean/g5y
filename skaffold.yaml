@@ -10,7 +10,16 @@ build:
   artifacts:
   - image: example.net/yolean/g5y
     docker: {}
+  - image: example.net/yolean/g5y-test-keycloak
+    context: examples/oauth-keycloak/keycloak
+    docker: {}
 manifests:
   kustomize:
     paths:
     - examples/noauth
+profiles:
+- name: test-oauth-keycloak
+  manifests:
+    kustomize:
+      paths:
+      - examples/oauth-keycloak
