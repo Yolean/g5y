@@ -1,0 +1,8 @@
+{
+  "name": "g5y-kubie-not",
+  "description": "not in a kubie shell",
+  "scripts": {
+    "setup": "! kubie info ctx"
+  }
+}
+  

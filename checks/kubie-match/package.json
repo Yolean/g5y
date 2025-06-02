@@ -1,0 +1,7 @@
+{
+  "name": "g5y-no-kubie",
+  "description": "not in a kubie shell OR in a test-g5y shell",
+  "scripts": {
+    "setup": "! kubie info ctx || [ 'k3d-test-g5y' = $(kubie info ctx) ]"
+  }
+}

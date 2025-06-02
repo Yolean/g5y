@@ -13,7 +13,7 @@ resources:
 
 patches:
 - path: mariadb-setup-keycloak.yaml
-- path: keycloak-setup-testrealm.yaml
+#- path: keycloak-setup-testrealm.yaml
 
 configMapGenerator:
 - name: keycloak-config

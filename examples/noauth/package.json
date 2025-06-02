@@ -1,11 +1,14 @@
 {
-  "name": "g5y-examples-noauth",
-  "version": "1.0.0",
-  "license": "Apache-2.0",
+  "name": "g5y-noauth",
+  "dependencies": {
+    "g5y-gateway-api": "*",
+    "g5y-sidecar": "file:../../sidecar"
+  },
   "devDependencies": {
     "vitest": "3.1.4"
   },
   "scripts": {
+    "setup": "KUBECONFIG=../../teststate/kubeconfig kubectl get pods && false",
     "test": "vitest run"
   }
 }

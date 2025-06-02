@@ -1,9 +1,50 @@
 {
   "$schema": "https://turborepo.com/schema.json",
+  "globalPassThroughEnv": [
+    "KUBIE_*"
+  ],
+  // our DAG is fundamental to all maintenance because it documents dev flows
   "tasks": {
+    // `clean` should optionally run before test except when covering idempotency
+    "clean": {
+    },
+    // `checks` are required for release and useful for dev but not required for build or test
+    "checks": {
+
+    },
+    // `build` builds artifacts
+    "build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/skaffold.yaml"
+      ]
+    },
+    // `setup` is an optional dependency of test in cases where setup isn't part of the test runs
+    "setup": {
+      "dependsOn": [
+        "build",
+        "^setup"
+      ],
+      "inputs": [
+      ],
+      "outputs": [
+        "$TURBO_ROOT$/teststate"
+      ]
+    },
+    // `test` runs tests, documents devloops, should pass with and without `clean`
     "test": {
-      "dependsOn": ["^test"],
+      "dependsOn": [
+        "setup",
+        "^test"
+      ],
       "outputs": []
+    },
+    // `release` runs everything
+    "release": {
+
     }
   }
 }

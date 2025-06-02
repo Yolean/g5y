@@ -1,0 +1,11 @@
+{
+  "name": "g5y-cluster-k3d",
+  "dependencies": {
+    "g5y-kubie-not": "*"
+  },
+  "scripts": {
+    "clean": "k3d cluster delete test-g5y && rm ../../teststate/kubeconfig || true",
+    "setup:done": "k3d cluster list test-g5y 2>/dev/null && [ -f ../../teststate/kubeconfig ]",
+    "setup": "npm run setup:done || ./bin/g5y-k3d.sh"
+  }
+}

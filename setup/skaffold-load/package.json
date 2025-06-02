@@ -1,0 +1,9 @@
+{
+  "name": "g5y-skaffold-load",
+  "bin": {
+    "skaffold-file-output-merge": "bin/skaffold-file-output-merge.sh"
+  },
+  "scripts": {
+    "show-merge": "cat $(./bin/skaffold-file-output-merge.sh)"
+  }
+}

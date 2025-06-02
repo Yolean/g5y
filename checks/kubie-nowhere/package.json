@@ -1,0 +1,7 @@
+{
+  "name": "g5y-kubie-nowhere",
+  "description": "a kubie shell in a different terminal with a different context is potentially risky",
+  "scripts": {
+    "setup": "!(ps -eo comm,pid,args | grep '^kubie')"
+  }
+}

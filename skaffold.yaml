@@ -9,8 +9,10 @@ build:
     useDockerCLI: true
     useBuildkit: true
   artifacts:
-  - image: example.net/yolean/g5y
-    docker: {}
+  - image: example.net/yolean/g5y-sidecar
+    context: .
+    docker:
+      dockerfile: sidecar/sidecar.Dockerfile
   - image: example.net/yolean/g5y-test-keycloak
     context: examples/oauth-keycloak/keycloak
     docker: {}
@@ -19,8 +21,13 @@ manifests:
     paths:
     - examples/noauth
 profiles:
-- name: example-noauth
-- name: example-oauth-keycloak
+- name: load
+  manifests:
+    kustomize:
+      paths:
+      - setup/skaffold-load
+- name: g5y-noauth
+- name: g5y-oauth-keycloak
   manifests:
     kustomize:
       paths:

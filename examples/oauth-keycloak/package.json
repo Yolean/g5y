@@ -1,0 +1,20 @@
+{
+  "name": "g5y-oauth-keycloak",
+  "dependencies": {
+    "g5y-noauth": "file:../noauth",
+    "g5y-skaffold-load": "file:../../setup/skaffold-load"
+  },
+  "devDependencies": {
+    "vitest": "3.1.4"
+  },
+  "scripts": {
+    "build:prepare": "mkdir -p target",
+    "build:images": "P=$(pwd) && cd ../../ && skaffold build -b keycloak --cache-artifacts=false --file-output=$P/target/skaffold-images.json",
+    "build:load": "P=$(pwd) && cd ../../ && KUBECONFIG=teststate/kubeconfig skaffold deploy -p load -a $(skaffold-file-output-merge)",
+    "build:manifests": "P=$(pwd) && cd ../../ && skaffold -p $npm_package_name render -a $(skaffold-file-output-merge)",
+    "build": "npm run build:prepare && npm run build:images && npm run build:load && npm run build:manifests",
+    "setup": "KUBECONFIG=../../teststate/kubeconfig kubectl get pods && false",
+    "test": "vitest run",
+    "zzz": "printenv"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "g5y-gateway-api",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "vitest": "3.1.4"
+  },
+  "scripts": {
+    "setup": "KUBECONFIG=../../teststate/kubeconfig ./bin/gateway-api-install.sh",
+    "test": "vitest run"
+  }
+}
+  

@@ -5,9 +5,14 @@
     "internal",
     "filterapi",
     "cmd",
+    "sidecar",
+    "checks/*",
     "examples/*"
   ],
   "packageManager": "npm@10.9.2",
+  "bin": {
+    "foo": "echo FOO"
+  },
   "scripts": {
     "start:dev": "skaffold run --status-check=false --tail=true"
   },
