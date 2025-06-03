@@ -1,5 +1,7 @@
 *
 !go.*
+
+# must match package dependencies
 !cmd
 !internal
 !filterapi
