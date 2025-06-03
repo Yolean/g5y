@@ -15,7 +15,7 @@ build:
   - image: example.net/yolean/g5y-sidecar
     context: .
     docker:
-      dockerfile: sidecar/sidecar.Dockerfile
+      dockerfile: sidecar.Dockerfile
   - image: example.net/yolean/g5y-test-keycloak
     context: examples/oauth-keycloak/keycloak
     docker: {}
