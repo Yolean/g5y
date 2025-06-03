@@ -14,6 +14,7 @@
     "foo": "echo FOO"
   },
   "scripts": {
+    "clean": "docker rmi $(docker images --format 'table {{.Repository}}:{{.Tag}}' | grep 'g5y' | tr -s ' ')",
     "start:dev": "skaffold run --status-check=false --tail=true"
   },
   "devDependencies": {

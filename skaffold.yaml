@@ -4,6 +4,9 @@ kind: Config
 metadata:
   name: g5y
 build:
+  tagPolicy:
+    gitCommit:
+      variant: CommitSha
   local:
     push: false
     useDockerCLI: true
