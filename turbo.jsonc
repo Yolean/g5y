@@ -19,7 +19,9 @@
       ],
       "inputs": [
         "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/skaffold.yaml"
+        "$TURBO_ROOT$/skaffold.yaml",
+        // we must rebuild when there's a new cluster
+        "$TURBO_ROOT$/teststate/kubeconfig"
       ]
     },
     // `setup` is an optional dependency of test in cases where setup isn't part of the test runs

@@ -15,10 +15,25 @@ build:
   - image: example.net/yolean/g5y-sidecar
     context: .
     docker:
+      cliFlags:
+      # https://github.com/turbokube/k3s-buildkit/
+      - --builder
+      - "g5y"
+      - --output
+      - "type=image"
       dockerfile: sidecar.Dockerfile
+      buildArgs:
+        # trust turbo workflows
+        SKIP_TESTS: "true"
   - image: example.net/yolean/g5y-test-keycloak
     context: examples/oauth-keycloak/keycloak
-    docker: {}
+    docker:
+      cliFlags:
+      # https://github.com/turbokube/k3s-buildkit/
+      - --builder
+      - "g5y"
+      - --output
+      - "type=image"
 manifests:
   kustomize:
     paths:

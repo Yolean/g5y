@@ -3,7 +3,7 @@
 set -eo pipefail
 
 ROOT="$(cd "$(dirname $0)"; cd ../../../; pwd -P)"
-export KUBECONFIG="$ROOT/teststate/kubeconfig"
+export KUBECONFIG="$ROOT/teststate/kubeconfig-k3d"
 
 # https://skaffold.dev/docs/environment/local-cluster/#auto-detection
 
@@ -15,11 +15,16 @@ cleanup() {
   k3d cluster delete test-g5y
 }
 
+K3S_BUILDKIT_VERSION="1bd5953057fb37e2edda993a443a8902cb0c5f13"
+K3S_IMAGE="ghcr.io/turbokube/k3s-buildkit:$K3S_BUILDKIT_VERSION"
+
 k3d cluster create test-g5y \
   --k3s-arg "--disable=traefik@server:*" \
   --k3s-arg "--disable=traefik@agent:*" \
   --port 80:80@loadbalancer \
-  --port 443:443@loadbalancer
+  --port 443:443@loadbalancer \
+  --image $K3S_IMAGE \
+  --port 8547:8547@server:0
 until k get pods 2>/dev/null; do
   echo "==> Waiting for cluster to respond ..."
   sleep 1
@@ -30,3 +35,12 @@ until k get serviceaccount default 2>/dev/null; do
 done
 
 echo "==> Done. KUBECONFIG=$KUBECONFIG"
+
+case "$K3S_IMAGE" in
+  ghcr.io/turbokube/k3s-buildkit*)
+    echo "==> Creating buildx builder (best-effort)"
+    docker buildx create --name g5y --driver remote tcp://localhost:8547
+    ;;
+  *)
+    ;;
+esac

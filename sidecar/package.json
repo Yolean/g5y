@@ -5,7 +5,7 @@
   },
   "scripts": {
     "build:prepare": "mkdir -p target",
-    "build:images": "P=$(pwd) && cd ../ && skaffold build -b sidecar --cache-artifacts=false --file-output=$P/target/skaffold-images.json",
+    "build:images": "P=$(pwd) && cd ../ && skaffold -v debug build -b sidecar --cache-artifacts=false --file-output=$P/target/skaffold-images.json",
     "build": "npm run build:prepare && npm run build:images",
     "zzz": "printenv"
   }

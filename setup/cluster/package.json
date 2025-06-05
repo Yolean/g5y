@@ -1,0 +1,11 @@
+{
+  "name": "g5y-cluster",
+  "description": "selects a default cluster setup (through dependency + turbo tasks)",
+  "dependencies": {
+    "g5y-cluster-k3d": "*"
+  },
+  "scripts": {
+    "setup": "mv ../../teststate/kubeconfig-k3d ../teststate/kubeconfig",
+    "clean": "rm ../../teststate/kubeconfig"
+  }
+}

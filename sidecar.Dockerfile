@@ -1,4 +1,5 @@
 FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.24-bookworm
+ARG SKIP_TESTS=false
 
 WORKDIR /workspace/source
 
@@ -7,7 +8,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go test ./...
+RUN [ "${SKIP_TESTS}" = "true" ] || go test ./...
 
 ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH \

@@ -6,6 +6,7 @@
     "filterapi",
     "cmd",
     "sidecar",
+    "setup/*",
     "checks/*",
     "examples/*"
   ],
