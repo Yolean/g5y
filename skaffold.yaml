@@ -9,32 +9,28 @@ build:
       variant: CommitSha
   local:
     push: false
-    useDockerCLI: true
-    useBuildkit: true
   artifacts:
   # dev builds, speedier dev loops, not for production
   - image: example.net/yolean/g5y-sidecar
     context: .
-    docker:
-      cliFlags:
-      # https://github.com/turbokube/k3s-buildkit/
-      - --builder
-      - "g5y"
-      - --output
-      - "type=image,push=false"
-      dockerfile: sidecar.Dockerfile
-      buildArgs:
-        # trust turbo workflows
-        SKIP_TESTS: "true"
+    custom:
+      buildCommand: >-
+        buildctl --addr=tcp://0.0.0.0:8547 build
+        --frontend=dockerfile.v0 --local context=. --local dockerfile=.
+        --opt filename=sidecar.Dockerfile
+        --opt build-arg:SKIP_TESTS=true
+        --output type=image,name=$IMAGE
+        --progress=plain
+        --metadata-file=sidecar/target/buildkit-images.json
   - image: example.net/yolean/g5y-test-keycloak
     context: examples/oauth-keycloak/keycloak
-    docker:
-      cliFlags:
-      # https://github.com/turbokube/k3s-buildkit/
-      - --builder
-      - "g5y"
-      - --output
-      - "type=image,push=false"
+    custom:
+      buildCommand: >-
+        buildctl --addr=tcp://0.0.0.0:8547 build
+        --frontend=dockerfile.v0 --local context=. --local dockerfile=.
+        --output type=image,name=$IMAGE
+        --progress=plain
+        --metadata-file=../target/buildkit-images.json
 manifests:
   kustomize:
     paths:
