@@ -12,6 +12,7 @@ build:
     useDockerCLI: true
     useBuildkit: true
   artifacts:
+  # dev builds, speedier dev loops, not for production
   - image: example.net/yolean/g5y-sidecar
     context: .
     docker:
@@ -20,7 +21,7 @@ build:
       - --builder
       - "g5y"
       - --output
-      - "type=image"
+      - "type=image,push=false"
       dockerfile: sidecar.Dockerfile
       buildArgs:
         # trust turbo workflows
@@ -33,17 +34,12 @@ build:
       - --builder
       - "g5y"
       - --output
-      - "type=image"
+      - "type=image,push=false"
 manifests:
   kustomize:
     paths:
     - examples/noauth
 profiles:
-- name: load
-  manifests:
-    kustomize:
-      paths:
-      - setup/skaffold-load
 - name: g5y-noauth
 - name: g5y-oauth-keycloak
   manifests:

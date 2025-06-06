@@ -5,6 +5,8 @@ set -eo pipefail
 ROOT="$(cd "$(dirname $0)"; cd ../../../; pwd -P)"
 export KUBECONFIG="$ROOT/teststate/kubeconfig-k3d"
 
+CONTEXT_NAME="g5y"
+
 # https://skaffold.dev/docs/environment/local-cluster/#auto-detection
 
 k() {
@@ -33,6 +35,17 @@ until k get serviceaccount default 2>/dev/null; do
   echo "==> Waiting for the default service account to exist ..."
   sleep 1
 done
+
+kubectl config rename-context k3d-test-g5y "$CONTEXT_NAME"
+
+CURRENT_CONTEXT="$(k config current-context)"
+case "$CURRENT_CONTEXT" in
+  k3d-*)
+    echo "==> WARNING Context name '$CURRENT_CONTEXT' will probably trigger skaffold's load behavior, resulting in unexpected tag names"
+    ;;
+  *)
+    ;;
+esac
 
 echo "==> Done. KUBECONFIG=$KUBECONFIG"
 
