@@ -3,7 +3,7 @@
 set -e
 
 IMAGE_TAG=$(git rev-parse --verify HEAD)
-[ -z "$(git status --untracked-files=normal --porcelain=v2)" ] || IMAGE_TAG="$IMAGE_TAG-dirty"
+[ -z "$(git status --untracked-files=normal --porcelain=v2)" ] || IMAGE_TAG="$IMAGE_TAG-dirty-$(date +%H%M%S)"
 IMAGE=example.net/yolean/g5y-test-keycloak:$IMAGE_TAG
 
 CONTEXT="$(cd "$(dirname $0)"; cd keycloak; pwd -P)"
