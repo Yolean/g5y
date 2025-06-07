@@ -2,6 +2,6 @@
   "name": "g5y-kubie-not",
   "description": "not in a kubie shell",
   "scripts": {
-    "setup": "! kubie info ctx >/dev/null"
+    "setup": "! kubie info ctx 2>/dev/null"
   }
 }

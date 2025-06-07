@@ -8,6 +8,9 @@ build:
     gitCommit:
       variant: CommitSha
   local:
+    # custom buildCommand builds will fail anyway because of https://skaffold.dev/docs/builders/builder-types/custom/#contract-between-skaffold-and-custom-build-script
+    # > Skaffold will try to obtain the digest of the newly built image from a remote registry (if $PUSH_IMAGE=true) or the local daemon (if $PUSH_IMAGE=false).
+    # Neither of those methods will work with k3s-buildkit.
     push: false
   artifacts:
   # dev builds, speedier dev loops, not for production
@@ -15,20 +18,20 @@ build:
     context: .
     custom:
       buildCommand: >-
-        buildctl --addr=tcp://0.0.0.0:8547 build
+        SOURCE_DATE_EPOCH=0 buildctl --addr=tcp://0.0.0.0:8547 build
         --frontend=dockerfile.v0 --local context=. --local dockerfile=.
         --opt filename=sidecar.Dockerfile
         --opt build-arg:SKIP_TESTS=true
-        --output type=image,name=$IMAGE,unpack=true,store=true,oci-mediatypes=true
+        --output type=image,name=$IMAGE,unpack=false,store=true,oci-mediatypes=true,rewrite-timestamp=true
         --progress=plain
         --metadata-file=sidecar/target/buildkit-images.json
   - image: example.net/yolean/g5y-test-keycloak
     context: examples/oauth-keycloak/keycloak
     custom:
       buildCommand: >-
-        buildctl --addr=tcp://0.0.0.0:8547 build
+        SOURCE_DATE_EPOCH=0 buildctl --addr=tcp://0.0.0.0:8547 build
         --frontend=dockerfile.v0 --local context=. --local dockerfile=.
-        --output type=image,name=$IMAGE,unpack=true,store=true,oci-mediatypes=true
+        --output type=image,name=$IMAGE,unpack=false,store=true,oci-mediatypes=true,rewrite-timestamp=true
         --progress=plain
         --metadata-file=../target/buildkit-images.json
 manifests:
