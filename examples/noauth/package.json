@@ -8,7 +8,10 @@
     "vitest": "3.1.4"
   },
   "scripts": {
-    "setup": "KUBECONFIG=../../teststate/kubeconfig kubectl get pods && false",
+    "build:prepare": "mkdir -p target",
+    "build:manifests": "P=$(pwd) && cd ../../ && skaffold -p $npm_package_name render --digest-source=tag -a $(skaffold-file-output-merge) -o $P/target/k8s.yaml",
+    "build": "npm run build:prepare && npm run build:manifests",
+    "setup": "echo TODO && KUBECONFIG=../../teststate/kubeconfig kubectl get pods && echo TODO",
     "test": "vitest run"
   }
 }

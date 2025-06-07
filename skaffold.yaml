@@ -19,7 +19,7 @@ build:
         --frontend=dockerfile.v0 --local context=. --local dockerfile=.
         --opt filename=sidecar.Dockerfile
         --opt build-arg:SKIP_TESTS=true
-        --output type=image,name=$IMAGE
+        --output type=image,name=$IMAGE,unpack=true,store=true,oci-mediatypes=true
         --progress=plain
         --metadata-file=sidecar/target/buildkit-images.json
   - image: example.net/yolean/g5y-test-keycloak
@@ -28,7 +28,7 @@ build:
       buildCommand: >-
         buildctl --addr=tcp://0.0.0.0:8547 build
         --frontend=dockerfile.v0 --local context=. --local dockerfile=.
-        --output type=image,name=$IMAGE
+        --output type=image,name=$IMAGE,unpack=true,store=true,oci-mediatypes=true
         --progress=plain
         --metadata-file=../target/buildkit-images.json
 manifests:

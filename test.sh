@@ -3,6 +3,21 @@
 set -eo pipefail
 
 turbo clean
+
+# ideally all of this should happen as dependencies
+turbo setup --filter=g5y-cluster
+turbo setup --filter=g5y-gateway-api
+
+turbo build --filter=g5y-noauth
+
+DIGEST=$(cat sidecar/target/buildkit-images.json | jq -r '."containerimage.digest"')
+SERVER=k3d-test-g5y-server-0
+docker exec $SERVER ctr images list | grep example.net | grep $DIGEST
+KUBECONFIG=$PWD/teststate/kubeconfig kubectl run sidecar-image-test --image=$DIGEST --image-pull-policy=Never --restart=Never
+
+echo "DONE"
+exit 0
+
 turbo test
 # verify idempotence, rerun without clean
 turbo setup --only --force

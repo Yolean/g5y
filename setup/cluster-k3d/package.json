@@ -4,7 +4,8 @@
     "g5y-kubie-not": "*"
   },
   "scripts": {
-    "clean": "k3d cluster delete test-g5y && rm ../../teststate/kubeconfig || true",
+    "clean:buildx": "docker buildx rm g5y 2>/dev/null || true",
+    "clean": "npm run clean:buildx && k3d cluster delete test-g5y && rm ../../teststate/kubeconfig-k3d || true",
     "setup": "./bin/g5y-k3d.sh"
   }
 }
