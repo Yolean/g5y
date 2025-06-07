@@ -34,6 +34,8 @@ build:
       - --builder=k3s-buildkit
       - --output
       - type=image,push=false,unpack=false,store=true,oci-mediatypes=true,rewrite-timestamp=true
+      - --progress=plain
+      - --metadata-file=exaxmples/oauth-keycloak/target/buildkit-images.json
       buildArgs:
         SOURCE_DATE_EPOCH: "0"
 manifests:

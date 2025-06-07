@@ -8,5 +8,5 @@ ROOT="$1"
 [ -n "$ROOT" ] || ROOT="$(cd "$(dirname $(readlink -f "$0"))/../../../"; pwd -P)"
 
 outfile=$(mktemp)
-find $ROOT -name skaffold-images.json -maxdepth 4 -print0 | xargs -0 jq -n '{builds: [inputs.builds[]]}' > $outfile
+find $ROOT -name skaffold-images.json -maxdepth 4 -print0 | xargs -0 jq -n '{builds: [inputs | select(.builds != null).builds[]]}' > $outfile
 echo $outfile
