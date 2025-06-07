@@ -5,7 +5,7 @@ kind: Kustomization
 namespace: test-g5y
 
 resources:
-- ../noauth
+- ../../noauth
 - github.com/Yolean/kubernetes-mysql-cluster/variants/scale-1?ref=e89ea21a5ea4cf57ab17855ce72f62850f65df5f
 - kc-deployment.yaml
 - keycloak-proxied-service.yaml

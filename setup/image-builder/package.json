@@ -1,9 +1,8 @@
 {
-  "name": "g5y-skaffold-load",
+  "name": "g5y-image-builder",
   "description": "deprecated because with https://github.com/turbokube/k3s-buildkit/ we don't need skaffold load, but we do need the bin script still",
   "bin": {
-    "skaffold-file-output-merge": "bin/skaffold-file-output-merge.sh",
-    "skaffold-file-output-from-buildctl": "bin/skaffold-file-output-from-buildctl.sh"
+    "buildctl-metadata-to-kustomize": "bin/buildctl-metadata-to-kustomize.sh"
   },
   "scripts": {
     "show-merge": "cat $(./bin/skaffold-file-output-merge.sh)"

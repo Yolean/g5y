@@ -8,10 +8,10 @@
     "vitest": "3.1.4"
   },
   "scripts": {
-    "build:prepare": "mkdir -p target",
-    "build:manifests": "P=$(pwd) && cd ../../ && skaffold -p $npm_package_name render --digest-source=tag -a $(skaffold-file-output-merge) -o $P/target/k8s.yaml",
-    "build": "npm run build:prepare && npm run build:manifests",
-    "setup": "KUBECONFIG=../../teststate/kubeconfig kubectl apply -f target/k8s.yaml",
+    "clean": "rm -rf target",
+    "build:dev": "buildctl-metadata-to-kustomize src target/dev-kustomize ../../sidecar/target/buildkit-image.json",
+    "build": "npm run build:dev",
+    "setup": "KUBECONFIG=../../teststate/kubeconfig kubectl apply -k target/dev-kustomize",
     "test": "vitest run"
   }
 }
