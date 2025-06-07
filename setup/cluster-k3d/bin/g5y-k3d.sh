@@ -5,6 +5,8 @@ set -eo pipefail
 ROOT="$(cd "$(dirname $0)"; cd ../../../; pwd -P)"
 export KUBECONFIG="$ROOT/teststate/kubeconfig-k3d"
 
+K3D_NAME="test-g5y"
+# avoid any prefix that triggers skaffold's local beahvior https://skaffold.dev/docs/environment/local-cluster/#auto-detection
 CONTEXT_NAME="g5y"
 
 # https://skaffold.dev/docs/environment/local-cluster/#auto-detection
@@ -20,7 +22,7 @@ cleanup() {
 K3S_BUILDKIT_VERSION="1bd5953057fb37e2edda993a443a8902cb0c5f13"
 K3S_IMAGE="ghcr.io/turbokube/k3s-buildkit:$K3S_BUILDKIT_VERSION"
 
-k3d cluster create test-g5y \
+k3d cluster create $K3D_NAME \
   --k3s-arg "--disable=traefik@server:*" \
   --k3s-arg "--disable=traefik@agent:*" \
   --port 80:80@loadbalancer \
@@ -36,7 +38,7 @@ until k get serviceaccount default 2>/dev/null; do
   sleep 1
 done
 
-kubectl config rename-context k3d-test-g5y "$CONTEXT_NAME"
+kubectl config rename-context k3d-$K3D_NAME "$CONTEXT_NAME"
 
 CURRENT_CONTEXT="$(k config current-context)"
 case "$CURRENT_CONTEXT" in
@@ -52,7 +54,7 @@ echo "==> Done. KUBECONFIG=$KUBECONFIG"
 case "$K3S_IMAGE" in
   ghcr.io/turbokube/k3s-buildkit*)
     echo "==> Creating buildx builder (best-effort)"
-    docker buildx create --name g5y --driver remote tcp://localhost:8547
+    docker buildx create --name k3s-buildkit --driver remote tcp://localhost:8547
     ;;
   *)
     ;;

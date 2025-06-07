@@ -5,9 +5,9 @@
   },
   "scripts": {
     "build:prepare": "mkdir -p target",
-    "build:images": "P=$(pwd) && cd ../ && skaffold -v debug build -b sidecar --cache-artifacts=false | tee /tmp/g5y-sk-sc.log || true && grep 'naming to' /tmp/g5y-sk-sc.log",
-    "build:workaround": "skaffold-file-output-from-buildctl",
-    "build": "npm run build:prepare && npm run build:images && npm run build:workaround",
+    "build:images": "P=$(pwd) && cd ../ && skaffold -v debug build -b sidecar --cache-artifacts=false --file-output=$P/target/skaffold-images.json",
+    "build:actualtag": "skaffold-file-output-from-buildctl && echo 'skaffold bogus local=true tags replaced'",
+    "build": "npm run build:prepare && npm run build:images && npm run build:actualtag",
     "zzz": "printenv"
   }
 }

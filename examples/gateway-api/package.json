@@ -7,6 +7,6 @@
   },
   "scripts": {
     "setup": "KUBECONFIG=../../teststate/kubeconfig ./bin/gateway-api-install.sh",
-    "test": "KUBECONFIG=../../teststate/kubeconfig kubectl -n envoy-gateway-system wait --for=jsonpath='{.status.availableReplicas}'=1 deploy/envoy-gateway"
+    "test": "KUBECONFIG=../../teststate/kubeconfig kubectl -n envoy-gateway-system wait --timeout=120s --for=jsonpath='{.status.availableReplicas}'=1 deploy/envoy-gateway"
   }
 }

@@ -8,32 +8,34 @@ build:
     gitCommit:
       variant: CommitSha
   local:
-    # custom buildCommand builds will fail anyway because of https://skaffold.dev/docs/builders/builder-types/custom/#contract-between-skaffold-and-custom-build-script
-    # > Skaffold will try to obtain the digest of the newly built image from a remote registry (if $PUSH_IMAGE=true) or the local daemon (if $PUSH_IMAGE=false).
-    # Neither of those methods will work with k3s-buildkit.
     push: false
+    useDockerCLI: true
+    useBuildkit: true
   artifacts:
   # dev builds, speedier dev loops, not for production
   - image: example.net/yolean/g5y-sidecar
     context: .
-    custom:
-      buildCommand: >-
-        SOURCE_DATE_EPOCH=0 buildctl --addr=tcp://0.0.0.0:8547 build
-        --frontend=dockerfile.v0 --local context=. --local dockerfile=.
-        --opt filename=sidecar.Dockerfile
-        --opt build-arg:SKIP_TESTS=true
-        --output type=image,name=$IMAGE,unpack=false,store=true,oci-mediatypes=true,rewrite-timestamp=true
-        --progress=plain
-        --metadata-file=sidecar/target/buildkit-images.json
+    docker:
+      cliFlags:
+      - --builder=k3s-buildkit
+      - --output
+      - type=image,push=false,unpack=false,store=true,oci-mediatypes=true,rewrite-timestamp=true
+      - --progress=plain
+      - --metadata-file=sidecar/target/buildkit-images.json
+      dockerfile: sidecar.Dockerfile
+      buildArgs:
+        SOURCE_DATE_EPOCH: "0"
+        # trust turbo workflows
+        SKIP_TESTS: "true"
   - image: example.net/yolean/g5y-test-keycloak
     context: examples/oauth-keycloak/keycloak
-    custom:
-      buildCommand: >-
-        SOURCE_DATE_EPOCH=0 buildctl --addr=tcp://0.0.0.0:8547 build
-        --frontend=dockerfile.v0 --local context=. --local dockerfile=.
-        --output type=image,name=$IMAGE,unpack=false,store=true,oci-mediatypes=true,rewrite-timestamp=true
-        --progress=plain
-        --metadata-file=../target/buildkit-images.json
+    docker:
+      cliFlags:
+      - --builder=k3s-buildkit
+      - --output
+      - type=image,push=false,unpack=false,store=true,oci-mediatypes=true,rewrite-timestamp=true
+      buildArgs:
+        SOURCE_DATE_EPOCH: "0"
 manifests:
   kustomize:
     paths:

@@ -9,10 +9,10 @@
   },
   "scripts": {
     "build:prepare": "mkdir -p target && rm target/buildkit-images.json 2>/dev/null || true",
-    "build:images": "P=$(pwd) && cd ../../ && skaffold -v debug build -b keycloak --cache-artifacts=false | tee /tmp/g5y-sk-kc.log || true && grep 'naming to' /tmp/g5y-sk-kc.log",
-    "build:workaround": "skaffold-file-output-from-buildctl",
+    "build:images": "P=$(pwd) && cd ../../ && skaffold -v debug build -b keycloak --cache-artifacts=false --file-output=$P/target/skaffold-images.json",
+    "build:actualtag": "skaffold-file-output-from-buildctl && echo 'skaffold bogus local=true tags replaced'",
     "build:manifests": "P=$(pwd) && cd ../../ && skaffold -p $npm_package_name render --digest-source=tag -a $(skaffold-file-output-merge) -o $P/target/k8s.yaml",
-    "build": "npm run build:prepare && npm run build:images && npm run build:workaround && npm run build:manifests",
+    "build": "npm run build:prepare && npm run build:images && npm run build:actualtag && npm run build:manifests",
     "setup": "KUBECONFIG=../../teststate/kubeconfig kubectl apply -f target/k8s.yaml",
     "test": "vitest run",
     "zzz": "printenv"
